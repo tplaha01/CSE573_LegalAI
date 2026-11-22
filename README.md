@@ -1,142 +1,107 @@
-<<<<<<< HEAD
-# Agentic Law: Yashwardhan's data pipeline and knowledge graph
+# Legal AI: Evidence-Grounded Precedent Research
 
-This package implements **Yashwardhan Ramchaware's assigned workstream** in the G12-P15 proposal: prepare the legal dataset and deliver a citation graph that the modeling, RAG, and evaluation workstreams can use.
+Course project for **CSE 573: Semantic Web Mining**. The project builds and evaluates a prototype that helps explore Indian Supreme Court land-dispute judgments by retrieving earlier, potentially relevant precedents and producing analysis grounded in passages from those judgments.
 
-It includes Python source, the supplied metadata inputs, generated metadata/graph outputs, tests, and teammate handoff instructions. It does not train the other workstreams' models.
+The system is a research prototype, not legal advice. Its purpose is to study retrieval, citation grounding, and the limits of automated legal analysis.
 
-## What is ready
+## Final project scope
 
-- Join the land-dispute workbook and both citation JSON schemas using Indian Kanoon document IDs.
-- Normalize metadata, retain source provenance, merge duplicate sources, and record conflicts.
-- Orient every citation as **citing document → cited document**, including reversed `cited_by` records.
-- Export a directed graph for offline use and Neo4j, with separate case, statute, section, and unresolved reference types.
-- Ingest local judgment PDFs when supplied; clean text, preserve page provenance, emit chunks and silver section labels, and report extraction problems.
-- Prepare temporal split and citation benchmark artifacts without treating missing judgment text as completed benchmark data.
+The project uses the **6,954 land-dispute cases** identified by the second citation file shared in the course Canvas group discussion as its target case set. The citation file supplies case relationships and metadata; usable full-text judgments must be matched and verified separately. The target count is not the same as the number of cases available for text-based experiments.
 
-**The attachments do not contain judgment PDFs.** The project proposal PDF is documentation, not a judgment. The included metadata/graph run therefore has no real judgment pages, text chunks, or eligible full-text test queries. The PDF extraction path is implemented and tested; run it on the judgment corpus before model training.
+The planned end-to-end workflow is:
 
-## Quick start
+1. Validate case identifiers, citation records, dates, and available judgment PDFs.
+2. Extract and normalize judgment text while retaining case, page, and passage provenance.
+3. Build a citation knowledge graph and lexical and semantic retrieval indexes.
+4. Retrieve only precedents eligible as of the query judgment's date.
+5. Generate structured legal analysis grounded in retrieved passages, with citations attached to claims.
+6. Evaluate retrieval, citation validity and support, and legal-analysis quality using automatic checks and a small human-reviewed gold subset.
 
-Use Python 3.11 or later. Extract the archive, then open a terminal in this folder.
+Indian Kanoon API data is an optional source for specific missing metadata. Any API-derived fields must retain source provenance. API access does not replace validation of the citation file or judgment-text matches.
 
-macOS/Linux:
+## Current implementation
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python run_pipeline.py --raw-dir data/raw --out-dir data/processed
-python -m unittest discover -s tests -v
-```
+The repository includes a data-normalization and citation-graph pipeline, PDF text extraction and chunking, temporal benchmark preparation, validation utilities, and prototype model scripts:
 
-For all synthetic-PDF tests, install `requirements-dev.txt` instead of
-`requirements.txt` (adds ReportLab). The verified build passed **21 tests**.
-`notebooks/01_data_pipeline.ipynb` provides a guided Jupyter/Colab entry point;
-`examples/consume_outputs.py` is a runnable teammate consumer.
-Run `python validate_outputs.py` to check the included snapshot's hashes,
-graph endpoints, and every citation observation against its original direction.
+- `src/agentic_law_data/` — metadata normalization, text processing, graph construction, and benchmark preparation.
+- `run_pipeline.py` — build processed case, text, graph, and benchmark artifacts.
+- `validate_outputs.py` — validate a generated data snapshot and citation graph outputs.
+- `models/classical_model.py` — TF-IDF + Linear SVM and CRF rhetorical-role classification prototypes.
+- `models/deep_learning.py` — InLegalBERT chunk embeddings and FAISS semantic index prototype.
+- `models/bypass_classical_model.py` — plumbing-only experiment with synthetic labels; its metrics are not model-performance results and must not be reported as such.
+- `docs/` and `HANDOFF.md` — implementation notes, validation details, and integration guidance.
 
-Windows PowerShell:
+These scripts are starting points for the final system, not proof that the end-to-end system or its evaluation is complete. In particular, classification is meaningful only if the sentence labels contain sufficient reviewed examples across multiple classes. The `UNKNOWN` label must be retained rather than replaced with invented targets.
+
+## Data and evaluation principles
+
+- Use the Canvas second citation file as the reference source for the 6,954-case land-dispute scope.
+- Preserve case IDs as strings and retain provenance when records are merged or metadata is supplemented.
+- Match PDFs to cases by authoritative case ID or an explicit mapping manifest; manually spot-check matches.
+- Report counts for cases with citation metadata, verified judgment text, and both. Never imply that all 6,954 cases have usable text without measuring it.
+- Split data by case, not by sentence or chunk, to prevent leakage between training and evaluation.
+- For historical queries, exclude the query judgment and any later cases from retrieval candidates.
+- Treat citation links as **partial silver relevance labels**: a cited case may be relevant, but uncited cases are not automatically irrelevant.
+- Validate a small sample with human reviewers. Report citation validity, citation support, and citation coverage separately.
+- Score legal analysis on the planned dimensions: relevance, correctness, evidence grounding, reasoning, argument quality, and counterargument quality. An LLM judge is supplementary and must be compared with human ratings.
+- Report component metrics separately; do not collapse them into one headline score.
+
+## Setup
+
+Use Python 3.11 or later. From the repository root:
 
 ```powershell
 py -3 -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python run_pipeline.py --raw-dir data/raw --out-dir data/processed
-python -m unittest discover -s tests -v
 ```
 
-If PowerShell blocks activation, use `.venv\Scripts\python.exe` instead of `python` in the last three commands. Metadata processing and offline graph traversal do not require Docker, Neo4j, an API key, or an LLM.
+If PowerShell blocks environment activation, use `.venv\Scripts\python.exe` in place of `python`.
 
-## Add the judgment PDFs
+## Run the data pipeline
 
-Obtain the judgment corpus referenced in the proposal and keep it outside the code repository. Set the PDF root to the directory containing year folders:
+Place the approved citation and metadata inputs under `data/raw/`. Keep large or restricted PDF corpora outside Git. Point `--pdf-root` at the directory containing judgment PDFs; use `--pdf-manifest` when filenames cannot be matched through the normal mapping.
+
+```powershell
+python run_pipeline.py --raw-dir data/raw --out-dir data/processed --pdf-root "D:\datasets\supreme_court_judgments"
+python validate_outputs.py
+```
+
+The PDF root is optional for metadata and graph processing, but retrieval and text-based answer evaluation require usable judgment text. Review `data/processed/quality_report.json`, `split_manifest.json`, and `benchmark_queries.jsonl` before training or reporting results. Confirm that the pipeline is consuming the **second Canvas citation file** and that the selected snapshot corresponds to the intended 6,954-case scope.
+
+## Model prototypes
+
+Run model scripts from the repository root after checking their input paths and the generated label/split reports. The classical script trains a TF-IDF/SVM baseline and a CRF; the deep-learning script creates an InLegalBERT/FAISS index. Before using either in the final comparison:
+
+1. Verify that its paths point to the current `data/processed/` snapshot and split manifest.
+2. Confirm usable text and, for classification, valid multi-class labels.
+3. Keep every case wholly within one split and fit learned preprocessing only on training data.
+4. Save configurations, model versions, outputs, and evaluation results with the data/split version.
+
+The synthetic-label bypass script is for checking that code paths execute. Its predictions and scores do not measure classification quality.
+
+## Planned final evaluation
+
+| Component | Evaluation |
+|---|---|
+| Precedent retrieval | Recall@K, MRR, and nDCG@K against citation silver labels and a reviewed gold subset |
+| Optional rhetorical-role classification | Macro-F1, precision, recall, and confusion matrix, only if labels are usable |
+| Citation grounding | Citation validity, passage support, citation coverage, and unsupported-claim rate |
+| Legal analysis | Human ratings on the six rubric dimensions; report agreement for a double-scored subset |
+| End-to-end system | Reproducible held-out examples, component scorecard, and qualitative error analysis |
+
+Only report results reproduced from the frozen evaluation split. Document the actual text coverage, annotation limits, temporal-filtering policy, and failure cases in the final report.
+
+## Repository map
 
 ```text
-supreme_court_judgments/
-  1950/
-    Abdulla_Ahmed_vs_Animendra_Kissen_Mitter_on_14_March_1950_1.PDF
-  ...
+data/                 Raw inputs and processed snapshots
+docs/                 Project, implementation, and validation documentation
+models/               Classification and semantic-index prototypes
+neo4j/                Graph import and query resources
+src/agentic_law_data/  Data, text, graph, and benchmark pipeline
+tests/                Pipeline and component tests
+experiments/           Experiment outputs and analysis
 ```
 
-Then run:
-
-```bash
-python run_pipeline.py --raw-dir data/raw --out-dir data/processed --pdf-root /absolute/path/to/supreme_court_judgments
-```
-
-Use a quoted Windows path such as `--pdf-root "D:\datasets\supreme_court_judgments"` on Windows. The workbook's old `/content/drive/MyDrive/...` paths are retained as provenance; they are not assumed to exist on your computer. Matching uses portable paths and explicit document IDs. If files use another naming convention, provide `--pdf-manifest mapping.json`; see [the handoff](docs/HANDOFF.md).
-
-Do not point `--pdf-root` at the folder containing the proposal. Scanned/image-only PDFs require OCR before their text can be used. Missing files and empty extraction are reported, not silently replaced with invented text.
-
-The metadata inputs identify 10,205 known cases, rather than all 26,688 PDFs
-described in the proposal. To ingest text-only judgments absent from these
-subsets, supply their authoritative Indian Kanoon IDs in `--pdf-manifest`.
-The pipeline adds those mapped cases with `has_citation_metadata=false`;
-it never guesses a document ID from an unrelated filename.
-
-## Main outputs
-
-All paths below are relative to the selected output directory, normally `data/processed`.
-
-| File | Use |
-|---|---|
-| `cases.jsonl` | One normalized case per document ID; join and coverage metadata |
-| `references.jsonl` | Deduplicated, correctly oriented citation edges and provenance |
-| `pages.jsonl` | Cleaned judgment pages and page-level source information |
-| `chunks.jsonl` | Stable retrieval units with document/page/section provenance |
-| `sentences.jsonl` | Sentence records and silver rhetorical-role labels |
-| `quality_report.json` | Input counts, joins, missing text, warnings, and run status |
-| `run_manifest.json`, `cases.csv` | Artifact hashes for the shared snapshot and a flat metadata view |
-| `metadata_issues.jsonl` | Conflicts and rejected metadata requiring review |
-| `split_manifest.json` | Temporal partition, benchmark eligibility, and snapshot information |
-| `benchmark_queries.jsonl`, `qrels.jsonl` | Available benchmark queries and citation silver relevance labels |
-| `graph/graph_nodes.csv`, `graph/graph_edges.csv` | Neo4j-compatible graph exports |
-| `graph/graph.json` | Offline graph representation |
-
-JSONL means one JSON object per line. Preserve document IDs as strings in every downstream file. Empty text/benchmark files in the supplied metadata-only run are expected.
-
-## Observed input counts
-
-| Measure | Count |
-|---|---:|
-| Citation JSON rows | 7,493 |
-| Unique citation source IDs | 7,101 |
-| Duplicate source rows merged | 392 |
-| Land-dispute IDs | 6,954 |
-| Land/citation-source intersection | 3,850 |
-| Intersection with year 2018 or later | 558 |
-| Unified metadata case IDs | 10,205 |
-| Unique citation edges, including reversed `cited_by` | 237,250 |
-| Graph document/resource IDs | 128,436 |
-
-The proposal's 7,497 citation cases is a stated dataset description; the attached files actually contain 7,493 rows. The 558 cases are **metadata candidates**, not a completed full-text test set.
-
-The graph includes 10,205 corpus records and 118,231 external resources.
-External `Case` types are title-based hints with `metadata_verified=false`;
-they must not be counted as verified Supreme Court judgments.
-
-## Work with the team
-
-| Owner | Starts with |
-|---|---|
-| Yashwardhan | This data pipeline, extraction quality, graph, and data contracts |
-| Jhon Reymond | `sentences.jsonl` for classification and `chunks.jsonl` for retrieval |
-| Anushka | `chunks.jsonl`, normalized cases, and the graph for RAG/Graph-RAG |
-| Tarandeep | Frozen split artifacts, citation qrels, provenance, and the quality report |
-
-Read [HANDOFF.md](docs/HANDOFF.md) before integrating outputs. It explains joins, leakage controls, graph use, PDF mapping, and a shared Git workflow. [IMPLEMENTATION_REPORT.md](docs/IMPLEMENTATION_REPORT.md) provides a report-ready account of this work, including the limits of the supplied run.
-
-## Boundaries that matter
-
-- A citation means “cites”; it does not establish that a case applies, supports a claim, overrules another case, or is binding authority.
-- External references may be statutes, sections, judgments from other courts, or unresolved resources. They are not all Supreme Court cases.
-- Header-derived section labels are silver labels, not manually verified ground truth. `UNKNOWN` is a valid outcome.
-- Direct contact redaction is a limited heuristic, not complete anonymization. Review extracted text before sharing it.
-- Temporal evaluation must exclude the query judgment and future information. A current graph snapshot cannot be used unfiltered for historical benchmark retrieval.
-
-No model accuracy, retrieval improvement, or legal-answer quality is claimed by this data implementation.
-=======
-# CSE573_LegalAI
->>>>>>> 9870d8b074446d9155d43aa801f1fa460d10fb2b
+See `PROJECT_PLAN.md` in the parent project folder for team sequencing and deliverables, and `HANDOFF.md` for data contracts and integration notes.
