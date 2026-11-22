@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Agentic Law: Yashwardhan's data pipeline and knowledge graph
 
 This package implements **Yashwardhan Ramchaware's assigned workstream** in the G12-P15 proposal: prepare the legal dataset and deliver a citation graph that the modeling, RAG, and evaluation workstreams can use.
@@ -136,3 +137,6 @@ Read [HANDOFF.md](docs/HANDOFF.md) before integrating outputs. It explains joins
 - Temporal evaluation must exclude the query judgment and future information. A current graph snapshot cannot be used unfiltered for historical benchmark retrieval.
 
 No model accuracy, retrieval improvement, or legal-answer quality is claimed by this data implementation.
+=======
+# CSE573_LegalAI
+>>>>>>> 9870d8b074446d9155d43aa801f1fa460d10fb2b
