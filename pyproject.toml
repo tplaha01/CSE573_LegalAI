@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-law-data"
+version = "1.0.0"
+description = "Yashwardhan's reproducible data and citation graph workstream"
+requires-python = ">=3.10"
+dependencies = ["pandas==2.2.3", "openpyxl==3.1.5", "pdfplumber==0.11.9"]
+
+[project.scripts]
+agentic-law-data = "agentic_law_data.pipeline:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
