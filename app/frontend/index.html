@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <title>Agentic Law</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
+</head>
+
+<body>
+
+<header class="header">
+    <div>
+        <h1>Agentic Law</h1>
+        <p>Evidence-Grounded Precedent Research</p>
+    </div>
+</header>
+
+<main class="container">
+
+    <section class="search-card">
+
+        <h2>Research a legal issue</h2>
+
+        <p class="description">
+            Describe the legal issue or factual scenario you want
+            to research.
+        </p>
+
+        <textarea
+            id="query"
+            placeholder="Example: Find earlier precedents concerning insufficient documentary evidence of property ownership."
+        ></textarea>
+
+        <div class="controls">
+
+            <label>
+                Precedents before year
+                <input
+                    id="year"
+                    type="number"
+                    value="2018"
+                >
+            </label>
+
+            <label>
+                Number of passages
+                <select id="topK">
+                    <option value="3">3</option>
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
+                </select>
+            </label>
+
+        </div>
+
+        <button id="analyzeButton">
+            Analyze
+        </button>
+
+    </section>
+
+
+    <section
+        id="loading"
+        class="hidden"
+    >
+        Searching legal evidence...
+    </section>
+
+
+    <section
+        id="results"
+        class="hidden"
+    >
+
+        <div class="result-grid">
+
+            <article class="answer-card">
+
+                <h2>Analysis</h2>
+
+                <div id="answer"></div>
+
+            </article>
+
+
+            <aside class="evidence-card">
+
+                <h2>Supporting Evidence</h2>
+
+                <div id="citations"></div>
+
+            </aside>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+    Research prototype for CSE 573.
+    This system does not provide legal advice.
+</footer>
+
+
+<script src="/static/app.js"></script>
+
+</body>
+</html>
