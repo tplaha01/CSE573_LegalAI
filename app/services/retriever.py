@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List
 
-from app.schemas import Passage
+from app.schemas import LegalQuery, Passage
 
 
 class Retriever(ABC):
@@ -9,9 +9,7 @@ class Retriever(ABC):
     @abstractmethod
     def retrieve(
         self,
-        query: str,
+        query: LegalQuery,
         top_k: int = 5,
-        as_of_year: Optional[int] = None,
-        exclude_doc_id: Optional[str] = None,
     ) -> List[Passage]:
         pass

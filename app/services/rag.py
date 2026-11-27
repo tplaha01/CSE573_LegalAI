@@ -1,44 +1,59 @@
-from typing import Optional
+from app.schemas import (
+    CaseAnalysisRequest,
+    CaseAnalysisResponse,
+    Citation,
+    PrecedentResult,
+)
 
-from app.schemas import Citation, QueryResponse
+from app.services.query_builder import LegalQueryBuilder
 from app.services.retriever import Retriever
 
 
 class RAGService:
 
-    def __init__(self, retriever: Retriever):
-        self.retriever = retriever
-
-    def answer(
+    def __init__(
         self,
-        query: str,
-        top_k: int = 5,
-        as_of_year: Optional[int] = None,
-        query_doc_id: Optional[str] = None,
-    ) -> QueryResponse:
+        retriever: Retriever,
+    ):
+        self.retriever = retriever
+        self.query_builder = LegalQueryBuilder()
+
+    def analyze(
+        self,
+        request: CaseAnalysisRequest,
+    ) -> CaseAnalysisResponse:
+
+        legal_query = self.query_builder.build(
+            request
+        )
 
         passages = self.retriever.retrieve(
-            query=query,
-            top_k=top_k,
-            as_of_year=as_of_year,
-            exclude_doc_id=query_doc_id,
+            query=legal_query,
+            top_k=request.top_k,
         )
 
         if not passages:
-            return QueryResponse(
-                query=query,
-                answer=(
-                    "No eligible supporting passages were retrieved "
-                    "for this query."
+
+            return CaseAnalysisResponse(
+                analysis=(
+                    "No sufficiently relevant precedent "
+                    "was retrieved for the supplied case "
+                    "material."
                 ),
-                passages=[],
+                precedents=[],
                 citations=[],
-                mode="mock-rag",
+                retrieval_mode="mock-logic-aware",
             )
 
         citations = []
 
-        for index, passage in enumerate(passages, start=1):
+        precedents = []
+
+        for index, passage in enumerate(
+            passages,
+            start=1,
+        ):
+
             citations.append(
                 Citation(
                     citation_id=index,
@@ -46,26 +61,57 @@ class RAGService:
                     doc_id=passage.doc_id,
                     case_name=passage.case_name,
                     page=passage.page,
+                    section=passage.section,
                     supporting_text=passage.text,
                 )
             )
 
-        answer_parts = [
-            "This is a mock grounded response used to test the "
-            "Agentic Law infrastructure."
-        ]
-
-        for citation in citations:
-            answer_parts.append(
-                f"[{citation.citation_id}] "
-                f"{citation.case_name}: "
-                f"{citation.supporting_text}"
+            precedents.append(
+                PrecedentResult(
+                    doc_id=passage.doc_id,
+                    case_name=passage.case_name,
+                    score=passage.combined_score,
+                    reasons=passage.relevance_reasons,
+                    passages=[passage],
+                )
             )
 
-        return QueryResponse(
-            query=query,
-            answer="\n\n".join(answer_parts),
-            passages=passages,
+        analysis_lines = [
+            (
+                "Prototype analysis based only on "
+                "retrieved supporting passages."
+            ),
+            "",
+        ]
+
+        for citation, precedent in zip(
+            citations,
+            precedents,
+        ):
+
+            reasons = ", ".join(
+                precedent.reasons
+            )
+
+            analysis_lines.append(
+                f"[{citation.citation_id}] "
+                f"{citation.case_name}"
+            )
+
+            if reasons:
+                analysis_lines.append(
+                    f"Why relevant: {reasons}"
+                )
+
+            analysis_lines.append(
+                citation.supporting_text
+            )
+
+            analysis_lines.append("")
+
+        return CaseAnalysisResponse(
+            analysis="\n".join(analysis_lines),
+            precedents=precedents,
             citations=citations,
-            mode="mock-rag",
+            retrieval_mode="mock-logic-aware",
         )

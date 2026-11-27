@@ -1,22 +1,36 @@
 import unittest
 
+from app.schemas import LegalQuery
 from app.services.mock_retriever import MockRetriever
 
 
 class TestMockRetriever(unittest.TestCase):
 
-    def test_returns_passages(self):
+    def test_contract_retrieval(self):
+
         retriever = MockRetriever()
 
-        results = retriever.retrieve(
-            query="property ownership evidence",
-            top_k=2,
+        query = LegalQuery(
+            full_query=(
+                "Whether an estate broker had authority "
+                "to conclude a contract of sale."
+            )
         )
 
-        self.assertEqual(len(results), 2)
-        self.assertTrue(results[0].chunk_id)
-        self.assertTrue(results[0].doc_id)
-        self.assertTrue(results[0].text)
+        results = retriever.retrieve(
+            query=query,
+            top_k=3,
+        )
+
+        self.assertGreater(
+            len(results),
+            0,
+        )
+
+        self.assertEqual(
+            results[0].doc_id,
+            "mock_contract_case",
+        )
 
 
 if __name__ == "__main__":

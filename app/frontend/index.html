@@ -1,119 +1,291 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
+
     <title>Agentic Law</title>
 
     <link
         rel="stylesheet"
         href="/static/style.css"
     >
+
 </head>
+
 
 <body>
 
+
 <header class="header">
-    <div>
-        <h1>Agentic Law</h1>
-        <p>Evidence-Grounded Precedent Research</p>
+
+    <div class="header-inner">
+
+        <div>
+            <h1>Agentic Law</h1>
+
+            <p>
+                Logic-Aware Precedent Research
+                & Evidence-Grounded Analysis
+            </p>
+        </div>
+
+        <div class="prototype-badge">
+            Research Prototype
+        </div>
+
     </div>
+
 </header>
+
 
 <main class="container">
 
-    <section class="search-card">
 
-        <h2>Research a legal issue</h2>
+<section class="intro">
 
-        <p class="description">
-            Describe the legal issue or factual scenario you want
-            to research.
-        </p>
+    <h2>Analyze a legal matter</h2>
+
+    <p>
+        Provide the facts, legal issues,
+        party arguments and available evidence.
+        The system searches for legally relevant
+        precedent and explains why each result
+        may be relevant.
+    </p>
+
+</section>
+
+
+<div class="workspace">
+
+
+<section class="case-form">
+
+
+    <div class="field">
+
+        <label for="facts">
+            Facts / Background
+        </label>
 
         <textarea
-            id="query"
-            placeholder="Example: Find earlier precedents concerning insufficient documentary evidence of property ownership."
+            id="facts"
+            placeholder="Describe the material facts of the dispute..."
         ></textarea>
 
-        <div class="controls">
+    </div>
 
-            <label>
-                Precedents before year
-                <input
-                    id="year"
-                    type="number"
-                    value="2018"
-                >
+
+    <div class="field">
+
+        <label for="issues">
+            Legal Issue(s)
+        </label>
+
+        <textarea
+            id="issues"
+            placeholder="What legal question must be resolved?"
+        ></textarea>
+
+    </div>
+
+
+    <div class="two-column">
+
+
+        <div class="field">
+
+            <label for="petitioner">
+                Petitioner's Claims / Arguments
             </label>
 
-            <label>
-                Number of passages
-                <select id="topK">
-                    <option value="3">3</option>
-                    <option value="5" selected>5</option>
-                    <option value="10">10</option>
-                </select>
-            </label>
+            <textarea
+                id="petitioner"
+                placeholder="What is the petitioner's legal position?"
+            ></textarea>
 
         </div>
+
+
+        <div class="field">
+
+            <label for="respondent">
+                Respondent's Claims / Arguments
+            </label>
+
+            <textarea
+                id="respondent"
+                placeholder="What is the respondent's legal position?"
+            ></textarea>
+
+        </div>
+
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="evidence">
+            Evidence / Material Documents
+        </label>
+
+        <textarea
+            id="evidence"
+            placeholder="Describe the evidence available to the parties..."
+        ></textarea>
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="statutes">
+            Statutes / Constitutional Provisions
+        </label>
+
+        <input
+            id="statutes"
+            type="text"
+            placeholder="Example: Article 19(1)(a), Section 66 CPC"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="question">
+            Research Question
+        </label>
+
+        <textarea
+            id="question"
+            placeholder="What specifically should the system research?"
+        ></textarea>
+
+    </div>
+
+
+    <div class="action-row">
+
+        <label>
+
+            Results
+
+            <select id="topK">
+                <option value="3">
+                    3
+                </option>
+
+                <option
+                    value="5"
+                    selected
+                >
+                    5
+                </option>
+
+                <option value="10">
+                    10
+                </option>
+            </select>
+
+        </label>
+
 
         <button id="analyzeButton">
-            Analyze
+            Find Relevant Precedent
         </button>
 
-    </section>
+    </div>
 
 
-    <section
-        id="loading"
-        class="hidden"
-    >
-        Searching legal evidence...
-    </section>
+</section>
 
 
-    <section
-        id="results"
-        class="hidden"
-    >
-
-        <div class="result-grid">
-
-            <article class="answer-card">
-
-                <h2>Analysis</h2>
-
-                <div id="answer"></div>
-
-            </article>
+</div>
 
 
-            <aside class="evidence-card">
+<section
+    id="loading"
+    class="status hidden"
+>
 
-                <h2>Supporting Evidence</h2>
+    Analyzing legal issues
+    and retrieving precedent...
 
-                <div id="citations"></div>
+</section>
 
-            </aside>
 
-        </div>
+<section
+    id="results"
+    class="hidden"
+>
 
-    </section>
+
+    <div class="results-header">
+
+        <h2>
+            Analysis
+        </h2>
+
+        <span id="retrievalMode"></span>
+
+    </div>
+
+
+    <div class="result-layout">
+
+
+        <article class="analysis-card">
+
+            <h3>
+                Evidence-Grounded Analysis
+            </h3>
+
+            <div id="analysis"></div>
+
+        </article>
+
+
+        <aside class="precedent-panel">
+
+            <h3>
+                Relevant Precedents
+            </h3>
+
+            <div id="precedents"></div>
+
+        </aside>
+
+
+    </div>
+
+
+</section>
+
 
 </main>
 
 
 <footer>
-    Research prototype for CSE 573.
-    This system does not provide legal advice.
+
+    CSE 573 Agentic Law research prototype.
+    For research assistance only — not legal advice.
+
 </footer>
 
 
 <script src="/static/app.js"></script>
 
+
 </body>
+
 </html>

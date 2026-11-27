@@ -1,48 +1,48 @@
-from typing import List, Optional
+from typing import List
 
-from app.schemas import Passage
+from app.schemas import LegalQuery, Passage
 from app.services.retriever import Retriever
 
 
 MOCK_PASSAGES = [
+
     Passage(
-        chunk_id="mock_case_001_p3_c1",
-        doc_id="mock_case_001",
-        case_name="Sharma v. State",
-        year=2012,
-        page=3,
-        section="REASONING",
+        chunk_id="contract_authority_001",
+        doc_id="mock_contract_case",
+        case_name="Mock Contract Authority Case",
+        page=6,
+        section="COURT_REASONING",
         text=(
-            "The Court considered whether documentary evidence "
-            "was sufficient to establish the claimed interest in the property."
+            "The scope of an agent's authority depends upon "
+            "the language of the authorization and the "
+            "surrounding circumstances."
         ),
-        score=0.92,
     ),
+
     Passage(
-        chunk_id="mock_case_002_p8_c2",
-        doc_id="mock_case_002",
-        case_name="Kumar v. Singh",
-        year=2015,
-        page=8,
-        section="FACTS",
-        text=(
-            "The claimant relied upon documentary records and witness "
-            "testimony in support of the asserted property interest."
-        ),
-        score=0.86,
-    ),
-    Passage(
-        chunk_id="mock_case_003_p12_c1",
-        doc_id="mock_case_003",
-        case_name="Patel v. Rao",
-        year=2017,
+        chunk_id="property_evidence_001",
+        doc_id="mock_property_case",
+        case_name="Mock Property Evidence Case",
         page=12,
-        section="RATIO",
+        section="COURT_REASONING",
         text=(
-            "The Court emphasized that conclusions concerning title "
-            "must be supported by evidence established in the record."
+            "A claim concerning title to property must be "
+            "supported by evidence sufficient to establish "
+            "the asserted legal interest."
         ),
-        score=0.81,
+    ),
+
+    Passage(
+        chunk_id="speech_001",
+        doc_id="mock_constitution_case",
+        case_name="Mock Freedom of Speech Case",
+        page=4,
+        section="COURT_REASONING",
+        text=(
+            "Restrictions imposed upon publication engage "
+            "the constitutional protection of freedom of "
+            "speech and expression."
+        ),
     ),
 ]
 
@@ -51,27 +51,96 @@ class MockRetriever(Retriever):
 
     def retrieve(
         self,
-        query: str,
+        query: LegalQuery,
         top_k: int = 5,
-        as_of_year: Optional[int] = None,
-        exclude_doc_id: Optional[str] = None,
     ) -> List[Passage]:
 
-        results = MOCK_PASSAGES
+        query_text = query.full_query.lower()
 
-        if exclude_doc_id:
-            results = [
-                passage
-                for passage in results
-                if passage.doc_id != exclude_doc_id
+        scored_results = []
+
+        for passage in MOCK_PASSAGES:
+
+            score = 0.0
+            reasons = []
+
+            passage_text = passage.text.lower()
+
+            # Contract / agency logic
+            contract_terms = [
+                "contract",
+                "agent",
+                "broker",
+                "authority",
+                "sale",
             ]
 
-        if as_of_year is not None:
-            results = [
-                passage
-                for passage in results
-                if passage.year is not None
-                and passage.year < as_of_year
+            contract_matches = sum(
+                term in query_text
+                and term in passage_text
+                for term in contract_terms
+            )
+
+            if contract_matches:
+                score += contract_matches * 0.2
+                reasons.append(
+                    "Similar contract/agency legal issue"
+                )
+
+            # Property / evidence logic
+            property_terms = [
+                "property",
+                "ownership",
+                "title",
+                "evidence",
             ]
 
-        return results[:top_k]
+            property_matches = sum(
+                term in query_text
+                and term in passage_text
+                for term in property_terms
+            )
+
+            if property_matches:
+                score += property_matches * 0.2
+                reasons.append(
+                    "Similar property/evidence issue"
+                )
+
+            # Constitutional / speech logic
+            speech_terms = [
+                "speech",
+                "expression",
+                "publication",
+                "constitution",
+            ]
+
+            speech_matches = sum(
+                term in query_text
+                and term in passage_text
+                for term in speech_terms
+            )
+
+            if speech_matches:
+                score += speech_matches * 0.2
+                reasons.append(
+                    "Similar constitutional issue"
+                )
+
+            if score > 0:
+
+                result = passage.model_copy(
+                    update={
+                        "combined_score": round(score, 3),
+                        "relevance_reasons": reasons,
+                    }
+                )
+
+                scored_results.append(result)
+
+        scored_results.sort(
+            key=lambda item: item.combined_score or 0,
+            reverse=True,
+        )
+
+        return scored_results[:top_k]
